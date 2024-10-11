@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "1056042698190",
+    "firebase_url": "https://findersmvc-default-rtdb.firebaseio.com",
+    "project_id": "findersmvc",
+    "storage_bucket": "findersmvc.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1056042698190:android:2d1a63fba0ba0ae00d979f",
+        "android_client_info": {
+          "package_name": "com.company.finders"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBTethBIAT8Q58yfs6VlEzXSjN073EAquE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
