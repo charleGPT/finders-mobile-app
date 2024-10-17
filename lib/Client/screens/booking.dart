@@ -1,4 +1,4 @@
-import 'package:finders_v1_1/Client/payment.dart';
+import 'package:finders_v1_1/Client/screens/payment.dart';
 import 'package:flutter/material.dart';
 
 class BookingPage extends StatefulWidget {
@@ -6,6 +6,8 @@ class BookingPage extends StatefulWidget {
   final String address;
   final List<String> services;
   final List<double> prices;
+  final String providerId;
+  final String serviceProviderId;
 
   const BookingPage({
     super.key,
@@ -13,7 +15,8 @@ class BookingPage extends StatefulWidget {
     required this.address,
     required this.services,
     required this.prices,
-    required String providerId,
+    required this.providerId,
+    required this.serviceProviderId,
   });
 
   @override
@@ -146,8 +149,10 @@ class _BookingPageState extends State<BookingPage> {
                           services: widget.services,
                           prices: widget.prices,
                           totalPrice: totalPrice,
-                          providerId: '',
-                          service: [],
+                          serviceProviderId: widget.serviceProviderId,
+                          // providerId: widget.providerId, service: [],
+                          //serviceProviderDocId: '',
+                          //services: [],
                         ),
                       ),
                     );

@@ -1,25 +1,26 @@
+// ignore_for_file: library_private_types_in_public_api, use_build_context_synchronously
+
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:finders_v1_1/Client/bookingConfirmed.dart';
+import 'package:finders_v1_1/Client/screens/bookingConfirmed.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class PaymentPage extends StatefulWidget {
-  final String providerId;
   final String companyName;
   final List<String> services;
   final String address;
   final List<double> prices;
   final double totalPrice;
+  final String serviceProviderId;
 
   const PaymentPage({
     super.key,
-    required this.providerId,
+    required this.serviceProviderId,
     required this.companyName,
     required this.services,
     required this.address,
     required this.prices,
     required this.totalPrice,
-    required List service,
   });
 
   @override
@@ -32,15 +33,16 @@ class _PaymentPageState extends State<PaymentPage> {
   final TextEditingController _cvvController = TextEditingController();
   final TextEditingController _expiryController = TextEditingController();
 
+  // Show a Snackbar with the booking reference
   void showBookingSnackbar(BuildContext context, String bookingRef) {
     final snackBar = SnackBar(
       content: Text('Booking saved successfully with reference: $bookingRef'),
       duration: const Duration(seconds: 5),
     );
-
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
+  // Fetch the current user's data
   Future<Map<String, String>> fetchClientData() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
@@ -51,8 +53,13 @@ class _PaymentPageState extends State<PaymentPage> {
     return {'userId': "unknown-user", 'userName': "Unknown User"};
   }
 
+  // Save booking details to Firestore
   Future<void> saveBookingDetails(
-      String userId, String userName, BuildContext context) async {
+      String userId,
+      String userName,
+      String serviceProviderId,
+      String companyName,
+      BuildContext context) async {
     try {
       String bookingRef = DateTime.now().millisecondsSinceEpoch.toString();
       await FirebaseFirestore.instance
@@ -61,22 +68,31 @@ class _PaymentPageState extends State<PaymentPage> {
           .set({
         'userId': userId,
         'userName': userName,
-        'serviceProviderId': widget.providerId,
-        'companyName': widget.companyName,
+        'serviceProviderId': widget.serviceProviderId, // Correct variable usage
+        'companyName': companyName,
         'services': widget.services,
         'address': widget.address,
-        'prices': widget.prices,
+        'prices': widget.prices
+            .map((prices) => prices.toStringAsFixed(2))
+            .toList(), // Convert to string
         'totalPrice': widget.totalPrice,
         'date': DateTime.now(),
         'status': 'pending',
       });
+
+      if (!mounted) return; // Ensure the widget is still mounted
+
       showBookingSnackbar(context, bookingRef);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error saving booking details')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error saving booking details')),
+        );
+      }
     }
   }
 
+  // Validators for the payment form fields
   String? _validateCardNumber(String? value) {
     if (value == null || value.isEmpty) {
       return 'Please enter card number';
@@ -140,10 +156,10 @@ class _PaymentPageState extends State<PaymentPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Payment Details',
-                      style: const TextStyle(
-                          fontSize: 24, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 16),
                     Text('Company: ${widget.companyName}',
@@ -197,7 +213,15 @@ class _PaymentPageState extends State<PaymentPage> {
                     ElevatedButton(
                       onPressed: () async {
                         if (_formKey.currentState!.validate()) {
-                          await saveBookingDetails(userId, userName, context);
+                          await saveBookingDetails(
+                            userId,
+                            userName,
+                            widget.serviceProviderId,
+                            widget.companyName,
+                            context,
+                          );
+                          if (!mounted) return;
+
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                                 content: Text('Payment Successful!')),

@@ -1,7 +1,7 @@
 // ignore_for_file: file_names, unused_import
 
-import 'package:finders_v1_1/Client/appointment_page.dart';
-import 'package:finders_v1_1/Client/client_home.dart';
+import 'package:finders_v1_1/Client/screens/appointment_page.dart';
+import 'package:finders_v1_1/Client/screens/client_home.dart';
 import 'package:flutter/material.dart';
 
 class BookingConfirmationPage extends StatelessWidget {

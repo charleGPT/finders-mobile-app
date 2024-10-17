@@ -1,11 +1,12 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:finders_v1_1/Client/screens/appointment_page.dart';
 import 'package:finders_v1_1/about_us.dart';
-import 'package:finders_v1_1/Client/all_companies.dart';
-import 'package:finders_v1_1/Client/appointment_page.dart';
-import 'package:finders_v1_1/Client/booking.dart';
-import 'package:finders_v1_1/Client/client_profile.dart';
-import 'package:finders_v1_1/Client/contact_us.dart';
+import 'package:finders_v1_1/Client/screens/all_companies.dart';
+import 'package:finders_v1_1/Client/screens/booking.dart';
+import 'package:finders_v1_1/Client/screens/client_profile.dart';
+import 'package:finders_v1_1/Client/screens/contact_us.dart';
+import 'package:finders_v1_1/Client/screens/faqs_page.dart'; // Import the FAQsPage
 import 'package:finders_v1_1/main_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -21,7 +22,6 @@ class ClientHomePage extends StatefulWidget {
 class _ClientHomePageState extends State<ClientHomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   var indexClicked = 0;
-
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   List<String> categories = ['Household', 'Beauty', 'Electronics', 'Other'];
   String? selectedCategory;
@@ -38,10 +38,59 @@ class _ClientHomePageState extends State<ClientHomePage> {
     }
   }
 
+  // Fetch service providers from Firestore
+  Stream<QuerySnapshot> getServiceProviders() {
+    return _firestore.collection('Service Provider').snapshots();
+  }
+
   late final List<Widget> screens = [
+    StreamBuilder<QuerySnapshot>(
+      stream: getServiceProviders(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final serviceProviders = snapshot.data!.docs;
+
+        if (serviceProviders.isEmpty) {
+          return const Center(child: Text('No Service Providers available.'));
+        }
+
+        return ListView.builder(
+          itemCount: serviceProviders.length,
+          itemBuilder: (context, index) {
+            var serviceProvider = serviceProviders[index];
+            return Card(
+              elevation: 4,
+              margin: const EdgeInsets.all(8),
+              child: ListTile(
+                leading: const CircleAvatar(),
+                title: Text(serviceProvider['companyName']),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Service: ${serviceProvider['service']}'),
+                    Text('Email: ${serviceProvider['email']}'),
+                    Text('Address: ${serviceProvider['address']}'),
+                  ],
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.info),
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/bookingPage');
+                  },
+                ),
+              ),
+            );
+          },
+        );
+      },
+    ),
     const Center(child: AllCompaniesPage()),
     const Center(child: AppointmentPage()),
     const Center(child: ContactUsPage()),
+    const Center(child: FAQsPage()), // Add the FAQsPage to the screens
   ];
 
   @override
@@ -70,82 +119,7 @@ class _ClientHomePageState extends State<ClientHomePage> {
         actions: [
           IconButton(
             onPressed: () {
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  String searchQuery = '';
-                  return StatefulBuilder(
-                    builder: (context, setState) {
-                      return AlertDialog(
-                        title: const Text('Search Service Providers'),
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            TextField(
-                              decoration: const InputDecoration(
-                                hintText: 'Enter company name or service',
-                                prefixIcon: Icon(Icons.search),
-                              ),
-                              onChanged: (value) {
-                                setState(() {
-                                  searchQuery = value;
-                                });
-                              },
-                            ),
-                            const SizedBox(height: 50),
-                            searchQuery.isNotEmpty
-                                ? StreamBuilder<QuerySnapshot>(
-                                    stream: FirebaseFirestore.instance
-                                        .collection('Service Provider')
-                                        .where('companyName',
-                                            isGreaterThanOrEqualTo: searchQuery)
-                                        .where('service',
-                                            isLessThanOrEqualTo:
-                                                '$searchQuery\uf8ff')
-                                        .snapshots(),
-                                    builder: (context, snapshot) {
-                                      if (!snapshot.hasData) {
-                                        return const Center(
-                                            child: CircularProgressIndicator());
-                                      }
-
-                                      var results = snapshot.data!.docs;
-
-                                      if (results.isEmpty) {
-                                        return const Text('No results found');
-                                      }
-
-                                      return SizedBox(
-                                        height: 200,
-                                        child: ListView.builder(
-                                          shrinkWrap: true,
-                                          itemCount: results.length,
-                                          itemBuilder: (context, index) {
-                                            var data = results[index].data()
-                                                as Map<String, dynamic>;
-                                            return ListTile(
-                                              title: Text(data['companyName']),
-                                              subtitle: Text(data['service']),
-                                            );
-                                          },
-                                        ),
-                                      );
-                                    },
-                                  )
-                                : Container(),
-                          ],
-                        ),
-                        actions: [
-                          ElevatedButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            child: const Text('Close'),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-              );
+              showSearchDialog(context);
             },
             icon: const Icon(Icons.search),
           ),
@@ -179,6 +153,16 @@ class _ClientHomePageState extends State<ClientHomePage> {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.question_answer),
+              title: const Text('FAQs'), // Add the FAQs option
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const FAQsPage()),
+                );
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.logout),
               title: const Text('Logout'),
               onTap: () async {
@@ -190,13 +174,23 @@ class _ClientHomePageState extends State<ClientHomePage> {
                 );
               },
             ),
+            SizedBox(
+              height: 350,
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete),
+              title: const Text(
+                  'Deactivate Account'), // Add Deactivate Account option
+              onTap: () {
+                _deactivateAccount();
+              },
+            ),
           ],
         ),
       ),
       body: Column(
         children: [
-          // Conditionally display the row of category buttons only for index 0
-          if (indexClicked == 0)
+          if (indexClicked == 0 || indexClicked == 1)
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: SingleChildScrollView(
@@ -205,13 +199,12 @@ class _ClientHomePageState extends State<ClientHomePage> {
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: categories.map((category) {
                     return Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 4.0), // Add spacing between buttons
+                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: selectedCategory == category
                               ? Colors.blueAccent
-                              : Colors.grey, // Highlight selected category
+                              : Colors.grey,
                         ),
                         onPressed: () {
                           setState(() {
@@ -225,11 +218,10 @@ class _ClientHomePageState extends State<ClientHomePage> {
                 ),
               ),
             ),
-          // Display service providers based on the selected category
-          if (indexClicked == 0)
+          if (indexClicked == 0 || indexClicked == 1)
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
-                stream: getCompaniesStream(), // Filtered by selectedCategory
+                stream: getCompaniesStream(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
                     return const Center(child: CircularProgressIndicator());
@@ -249,9 +241,6 @@ class _ClientHomePageState extends State<ClientHomePage> {
                       return Card(
                         elevation: 4,
                         margin: const EdgeInsets.all(8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
                         child: ListTile(
                           leading: const CircleAvatar(
                             backgroundImage: NetworkImage(
@@ -270,17 +259,34 @@ class _ClientHomePageState extends State<ClientHomePage> {
                           trailing: IconButton(
                             icon: const Icon(Icons.info),
                             onPressed: () {
-                              String providerId = serviceProvider
-                                  .id; // Get the providerId (document ID)
+                              // Navigate to the BookingPage with service provider details
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => BookingPage(
-                                    providerId: providerId,
-                                    companyName: '',
-                                    address: '',
-                                    services: [],
-                                    prices: [],
+                                    companyName: serviceProvider['companyName'],
+                                    address: serviceProvider['address'],
+                                    // Change this part to check if 'services' is a String or List
+                                    services: serviceProvider['service'] is List
+                                        ? List<String>.from(
+                                            serviceProvider['service'])
+                                        : [serviceProvider['service']],
+                                    // Adjust this part similarly for 'prices'
+                                    prices: serviceProvider['price'] is List
+                                        ? List<double>.from(
+                                            serviceProvider['price'].map(
+                                                (price) => price is int
+                                                    ? price.toDouble()
+                                                    : price))
+                                        : [
+                                            serviceProvider['price'] is int
+                                                ? serviceProvider['price']
+                                                    .toDouble()
+                                                : serviceProvider['price']
+                                          ],
+                                    serviceProviderId:
+                                        serviceProvider['serviceProviderId'],
+                                    providerId: serviceProvider.id,
                                   ),
                                 ),
                               );
@@ -293,31 +299,93 @@ class _ClientHomePageState extends State<ClientHomePage> {
                 },
               ),
             ),
+          BottomNavigationBar(
+            items: [
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.home),
+                label: 'Home',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.business),
+                label: 'Companies',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.calendar_today),
+                label: 'Appointments',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.contact_mail),
+                label: 'Contact Us',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.question_answer),
+                label: 'FAQs', // Add FAQ item in the bottom navigation bar
+              ),
+            ],
+            currentIndex: indexClicked,
+            selectedItemColor: Colors.white,
+            unselectedItemColor: Colors.white70,
+            onTap: (index) {
+              setState(() {
+                indexClicked = index;
+              });
+            },
+          ),
         ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.blue, // Set the background color to blue
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.business), label: 'Companies'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.event), label: 'Appointments'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.contact_mail), label: 'Contact Us'),
-        ],
-        currentIndex: indexClicked,
-        selectedItemColor: Colors.white, // Color for the selected item
-        unselectedItemColor: Colors.black, // Color for unselected items
-        onTap: (index) {
-          setState(() {
-            indexClicked = index;
-            selectedCategory =
-                null; // Reset category selection when changing tabs
-          });
-        },
-        fixedColor: Colors.blueAccent,
       ),
     );
+  }
+
+  void showSearchDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Search'),
+          content: TextField(
+            decoration: const InputDecoration(hintText: 'Search...'),
+            onSubmitted: (value) {
+              // Perform search action
+              Navigator.of(context).pop(); // Close the dialog
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Function to deactivate the account
+  Future<void> _deactivateAccount() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      // Delete user from Firestore
+      await _firestore.collection('users').doc(user.uid).delete();
+
+      // Delete user account
+      await user.delete();
+
+      // Sign out and redirect to main page
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const MainPage()),
+        (Route<dynamic> route) => false,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Your account has been deactivated.')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No user is currently signed in.')),
+      );
+    }
   }
 }

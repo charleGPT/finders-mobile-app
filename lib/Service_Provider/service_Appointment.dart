@@ -1,11 +1,10 @@
-// ignore_for_file: file_names, library_private_types_in_public_api, use_build_context_synchronously
-
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // For Firebase Firestore
-import 'package:firebase_auth/firebase_auth.dart'; // For Firebase Auth
+import 'package:cloud_firestore/cloud_firestore.dart'; // Import for Firebase
+import 'package:firebase_auth/firebase_auth.dart'; // Import for Firebase Auth
 
 class ServiceProviderAppointmentPage extends StatefulWidget {
-  const ServiceProviderAppointmentPage({super.key});
+  const ServiceProviderAppointmentPage(
+      {super.key, required String companyName});
 
   @override
   _ServiceProviderAppointmentPageState createState() =>
@@ -15,29 +14,58 @@ class ServiceProviderAppointmentPage extends StatefulWidget {
 class _ServiceProviderAppointmentPageState
     extends State<ServiceProviderAppointmentPage> {
   bool isRecentSelected = true; // Toggle between recent and history
+  String? companyName; // Variable to hold company name
 
-  // Fetch recent (pending) appointments for the service provider
-  Stream<QuerySnapshot> fetchRecentAppointments(String providerId) {
+  // Fetch the current user's data
+  Future<void> fetchProviderData() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      String userId = user.uid;
+
+      // Fetch company name from Firestore
+      DocumentSnapshot providerDoc = await FirebaseFirestore.instance
+          .collection(
+              'Service Provider') // Assuming you have a serviceProviders collection
+          .doc(userId)
+          .get();
+
+      if (providerDoc.exists && providerDoc.data() != null) {
+        var data = providerDoc.data() as Map<String, dynamic>;
+        setState(() {
+          companyName = data['companyName'] ?? "Unknown Company";
+        });
+      } else {
+        setState(() {
+          companyName = "Unknown Company";
+        });
+      }
+    }
+  }
+
+  // Function to fetch recent (pending) appointments for the service provider
+  Stream<QuerySnapshot> fetchRecentAppointments() {
+    print('Fetching recent appointments for company: $companyName'); // Debug
     return FirebaseFirestore.instance
         .collection('appointments')
-        .where('serviceProviderId', isEqualTo: providerId) // Filter by provider
-        .where('status', isEqualTo: 'pending') // Only show pending bookings
+        .where('companyName', isEqualTo: companyName) // Filter by company name
+        .where('status', isEqualTo: 'pending') // Show only pending appointments
         .snapshots();
   }
 
-  // Fetch accepted/rejected appointments for the service provider (history)
-  Stream<QuerySnapshot> fetchAppointmentHistory(String providerId) {
+  // Function to fetch appointment history (accepted/rejected) for the service provider
+  Stream<QuerySnapshot> fetchAppointmentHistory() {
+    print('Fetching appointment history for company: $companyName'); // Debug
     return FirebaseFirestore.instance
         .collection('appointments')
-        .where('serviceProviderId', isEqualTo: providerId) // Filter by provider
+        .where('companyName', isEqualTo: companyName) // Filter by company name
         .where('status', whereIn: [
       'accepted',
       'rejected'
-    ]) // History of accepted/rejected bookings
+    ]) // Show accepted/rejected bookings
         .snapshots();
   }
 
-  // Update booking status to 'accepted' or 'rejected'
+  // Function to update booking status to 'accepted' or 'rejected'
   Future<void> updateBookingStatus(String appointmentId, String status) async {
     try {
       await FirebaseFirestore.instance
@@ -52,18 +80,21 @@ class _ServiceProviderAppointmentPageState
   }
 
   @override
-  Widget build(BuildContext context) {
-    String? providerId =
-        FirebaseAuth.instance.currentUser?.uid; // Get provider's ID
+  void initState() {
+    super.initState();
+    fetchProviderData(); // Fetch the provider data when the widget initializes
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Appointments'),
         backgroundColor: Colors.blueAccent[100],
       ),
       body: Column(
         children: [
-          // Toggle buttons for Recent and History
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -86,15 +117,12 @@ class _ServiceProviderAppointmentPageState
               ),
             ],
           ),
-          // Display the appointment list based on the toggle
           Expanded(
-            child: providerId != null
+            child: companyName != null
                 ? (isRecentSelected
-                    ? buildAppointmentList(
-                        fetchRecentAppointments(providerId), true)
-                    : buildAppointmentList(
-                        fetchAppointmentHistory(providerId), false))
-                : const Center(child: Text('User not logged in')),
+                    ? buildAppointmentList(fetchRecentAppointments(), true)
+                    : buildAppointmentList(fetchAppointmentHistory(), false))
+                : const Center(child: Text('Loading company information...')),
           ),
         ],
       ),
@@ -121,10 +149,11 @@ class _ServiceProviderAppointmentPageState
             DocumentSnapshot appointment = snapshot.data!.docs[index];
             return Card(
               child: ListTile(
-                title: Text('Reference: ${appointment.id}'),
+                title: Text(
+                    'Reference: ${appointment.id}'), // Use appointment ID as reference
                 subtitle: Text(
                   'Date: ${appointment['date'].toDate().toString()}\n'
-                  'Service: ${appointment['service']}\n'
+                  'Service: ${appointment['services'].join(", ")}\n'
                   'Client: ${appointment['userName']}',
                 ),
                 trailing: isPending

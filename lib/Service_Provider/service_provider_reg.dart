@@ -55,11 +55,12 @@ class _PartnerRegistrationPageState extends State<PartnerRegistrationPage> {
     return result.docs.isNotEmpty; // Returns true if the company name exists
   }
 
-  // Function to generate a 5-digit random number
-  int generateServiceProviderId() {
+// Function to generate a 5-digit random number as a String
+  String generateServiceProviderId() {
     var random = Random();
-    return 10000 +
+    int randomNumber = 10000 +
         random.nextInt(90000); // Generates a number between 10000 and 99999
+    return randomNumber.toString(); // Convert the integer to a String
   }
 
   // Function to handle registration
@@ -102,7 +103,7 @@ class _PartnerRegistrationPageState extends State<PartnerRegistrationPage> {
         );
 
         // Generate the random serviceProviderId
-        int serviceProviderId = generateServiceProviderId();
+        String serviceProviderId = generateServiceProviderId();
 
         // Save additional service provider information to Firestore
         await _firestore

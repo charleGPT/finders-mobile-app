@@ -1,5 +1,6 @@
 // ignore_for_file: library_private_types_in_public_api
 
+import 'package:finders_v1_1/Client/screens/details.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import for Firebase
 import 'package:firebase_auth/firebase_auth.dart'; // Import for Firebase Auth
@@ -28,7 +29,8 @@ class _AppointmentPageState extends State<AppointmentPage> {
     return FirebaseFirestore.instance
         .collection('appointments')
         .where('userId', isEqualTo: clientId)
-        .where('status', isEqualTo: 'completed') // Example filter for history
+        .where('status',
+            whereIn: ['accepted', 'rejected']) // Example filter for history
         .snapshots();
   }
 
@@ -90,19 +92,23 @@ class _AppointmentPageState extends State<AppointmentPage> {
         return ListView.builder(
           itemCount: snapshot.data!.docs.length,
           itemBuilder: (context, index) {
-            DocumentSnapshot appointment = snapshot.data!.docs[index];
+            DocumentSnapshot appointmentDocument = snapshot.data!.docs[index];
             return Card(
               child: ListTile(
                 title: Text(
-                    'Reference: ${appointment.id}'), // Use appointment ID as reference
+                    'Reference: ${appointmentDocument.id}'), // Use appointment ID as reference
                 subtitle: Text(
-                    'Date: ${appointment['date'].toDate().toString()}'), // Convert timestamp to string
+                    'Date: ${appointmentDocument['date'].toDate().toString()}'), // Convert timestamp to string
                 trailing: TextButton(
                   onPressed: () {
-                    Navigator.pushNamed(
+                    Navigator.push(
                       context,
-                      '/detailsPage',
-                      arguments: appointment.id, // Pass appointment ID
+                      MaterialPageRoute(
+                        builder: (context) => AppointmentDetailsPage(
+                          appointmentReference:
+                              appointmentDocument.id, // Passing document ID
+                        ),
+                      ),
                     );
                   },
                   child: const Text('Details'),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'Service_Provider/service_provider_login.dart';
-import 'Client/client_login.dart';
+import 'Client/screens/client_login.dart';
 
 class MainPage extends StatelessWidget {
   const MainPage({super.key});

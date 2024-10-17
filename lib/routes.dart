@@ -1,18 +1,19 @@
-// ignore_for_file: constant_identifier_names
+// ignore_for_file: constant_identifier_names, unused_import
 
+import 'package:finders_v1_1/Client/screens/client_home.dart';
+import 'package:finders_v1_1/Client/screens/faqs_page.dart';
 import 'package:finders_v1_1/Service_Provider/service_Appointment.dart';
 import 'package:finders_v1_1/cipc.dart';
-import 'package:finders_v1_1/Client/all_companies.dart';
+import 'package:finders_v1_1/Client/screens/all_companies.dart';
 
-import 'package:finders_v1_1/Client/client_pro.dart';
-import 'package:finders_v1_1/Client/client_profile.dart';
+import 'package:finders_v1_1/Client/screens/client_pro.dart';
+import 'package:finders_v1_1/Client/screens/client_profile.dart';
 import 'package:finders_v1_1/about_us.dart';
-import 'package:finders_v1_1/Client/appointment_page.dart';
-import 'package:finders_v1_1/Client/client_details.dart';
-import 'package:finders_v1_1/Client/client_home.dart';
-import 'package:finders_v1_1/Client/client_login.dart';
-import 'package:finders_v1_1/Client/client_reg.dart';
-import 'package:finders_v1_1/Client/contact_us.dart';
+import 'package:finders_v1_1/Client/screens/appointment_page.dart';
+import 'package:finders_v1_1/Client/screens/client_details.dart';
+import 'package:finders_v1_1/Client/screens/client_login.dart';
+import 'package:finders_v1_1/Client/screens/client_reg.dart';
+import 'package:finders_v1_1/Client/screens/contact_us.dart';
 import 'package:finders_v1_1/splash.dart';
 import 'package:finders_v1_1/main_page.dart';
 import 'package:finders_v1_1/Service_Provider/provider_profile.dart';
@@ -21,9 +22,8 @@ import 'package:finders_v1_1/Service_Provider/service_provider_login.dart';
 import 'package:finders_v1_1/Service_Provider/service_provider_reg.dart';
 import 'package:flutter/material.dart';
 
-//   a main landing page
-
 class RouteManager {
+  //   a main landing page
   static const String mainPage = '/';
   static const String splash = '/splash';
   static const String clientHomePage = '/clientHomePage';
@@ -45,6 +45,7 @@ class RouteManager {
   static const String aboutUsPage = '/aboutUsPage';
   static const String contactUsPage = '/contactUsPage';
   static const String bookingPage = '/bookingPage';
+  static const String faqsPage = '/faqsPage';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -52,9 +53,13 @@ class RouteManager {
         return MaterialPageRoute(builder: (context) => const MainPage());
       case splash:
         return MaterialPageRoute(builder: (context) => const SplashScreen());
+      case faqsPage:
+        return MaterialPageRoute(builder: (context) => const FAQsPage());
       case service_appointmentPage:
         return MaterialPageRoute(
-            builder: (context) => const ServiceProviderAppointmentPage());
+            builder: (context) => const ServiceProviderAppointmentPage(
+                  companyName: '',
+                ));
       case clientHomePage:
         return MaterialPageRoute(builder: (context) => const ClientHomePage());
       case clientLoginPage:
