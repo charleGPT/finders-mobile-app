@@ -8,6 +8,7 @@ class BookingPage extends StatefulWidget {
   final List<double> prices;
   final String providerId;
   final String serviceProviderId;
+  final List<int> quantities;
 
   const BookingPage({
     super.key,
@@ -17,6 +18,7 @@ class BookingPage extends StatefulWidget {
     required this.prices,
     required this.providerId,
     required this.serviceProviderId,
+    required this.quantities,
   });
 
   @override
@@ -150,6 +152,7 @@ class _BookingPageState extends State<BookingPage> {
                           prices: widget.prices,
                           totalPrice: totalPrice,
                           serviceProviderId: widget.serviceProviderId,
+                          quantities: quantities,
                           // providerId: widget.providerId, service: [],
                           //serviceProviderDocId: '',
                           //services: [],

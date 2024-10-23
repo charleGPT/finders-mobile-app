@@ -21,6 +21,7 @@ class PaymentPage extends StatefulWidget {
     required this.address,
     required this.prices,
     required this.totalPrice,
+    required List<int> quantities,
   });
 
   @override

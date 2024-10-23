@@ -1,12 +1,11 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'package:finders_v1_1/Client/screens/appointment_page.dart';
+import 'package:finders_v1_1/Client/screens/faqs_page.dart';
 import 'package:finders_v1_1/about_us.dart';
 import 'package:finders_v1_1/Client/screens/all_companies.dart';
+
 import 'package:finders_v1_1/Client/screens/booking.dart';
 import 'package:finders_v1_1/Client/screens/client_profile.dart';
 import 'package:finders_v1_1/Client/screens/contact_us.dart';
-import 'package:finders_v1_1/Client/screens/faqs_page.dart'; // Import the FAQsPage
 import 'package:finders_v1_1/main_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -89,8 +88,8 @@ class _ClientHomePageState extends State<ClientHomePage> {
     ),
     const Center(child: AllCompaniesPage()),
     const Center(child: AppointmentPage()),
+    //const Center(child: ServiceProviderAppointmentPage()),
     const Center(child: ContactUsPage()),
-    const Center(child: FAQsPage()), // Add the FAQsPage to the screens
   ];
 
   @override
@@ -154,12 +153,34 @@ class _ClientHomePageState extends State<ClientHomePage> {
             ),
             ListTile(
               leading: const Icon(Icons.question_answer),
-              title: const Text('FAQs'), // Add the FAQs option
+              title: const Text('FAQs'),
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const FAQsPage()),
                 );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete),
+              title: const Text('Deactivate Account'),
+              onTap: () async {
+                final user = FirebaseAuth.instance.currentUser;
+                if (user != null) {
+                  // Delete user from Firestore 'users' collection
+                  await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .delete();
+                  await user.delete(); // Deletes the Firebase Auth user
+
+                  // Navigate to MainPage or show confirmation
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const MainPage()),
+                    (Route<dynamic> route) => false,
+                  );
+                }
               },
             ),
             ListTile(
@@ -172,17 +193,6 @@ class _ClientHomePageState extends State<ClientHomePage> {
                   MaterialPageRoute(builder: (context) => const MainPage()),
                   (Route<dynamic> route) => false,
                 );
-              },
-            ),
-            SizedBox(
-              height: 350,
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete),
-              title: const Text(
-                  'Deactivate Account'), // Add Deactivate Account option
-              onTap: () {
-                _deactivateAccount();
               },
             ),
           ],
@@ -286,7 +296,9 @@ class _ClientHomePageState extends State<ClientHomePage> {
                                           ],
                                     serviceProviderId:
                                         serviceProvider['serviceProviderId'],
-                                    providerId: serviceProvider.id,
+                                    providerId:
+                                        serviceProvider['serviceProviderId'],
+                                    quantities: [],
                                   ),
                                 ),
                               );
@@ -299,39 +311,39 @@ class _ClientHomePageState extends State<ClientHomePage> {
                 },
               ),
             ),
-          BottomNavigationBar(
-            items: [
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.home),
-                label: 'Home',
-              ),
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.business),
-                label: 'Companies',
-              ),
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.calendar_today),
-                label: 'Appointments',
-              ),
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.contact_mail),
-                label: 'Contact Us',
-              ),
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.question_answer),
-                label: 'FAQs', // Add FAQ item in the bottom navigation bar
-              ),
-            ],
-            currentIndex: indexClicked,
-            selectedItemColor: Colors.white,
-            unselectedItemColor: Colors.white70,
-            onTap: (index) {
-              setState(() {
-                indexClicked = index;
-              });
-            },
+          if (indexClicked != 0 && indexClicked != 1)
+            Expanded(child: screens[indexClicked]),
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Colors.blue,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.business),
+            label: 'Companies',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.event),
+            label: 'Appointments',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.contact_mail),
+            label: 'Contact Us',
           ),
         ],
+        currentIndex: indexClicked,
+        selectedItemColor: Colors.blue,
+        unselectedItemColor: Colors.black,
+        onTap: (index) {
+          setState(() {
+            indexClicked = index;
+            selectedCategory = null;
+          });
+        },
       ),
     );
   }
@@ -339,53 +351,78 @@ class _ClientHomePageState extends State<ClientHomePage> {
   void showSearchDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Search'),
-          content: TextField(
-            decoration: const InputDecoration(hintText: 'Search...'),
-            onSubmitted: (value) {
-              // Perform search action
-              Navigator.of(context).pop(); // Close the dialog
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: const Text('Cancel'),
-            ),
-          ],
+      builder: (BuildContext context) {
+        String searchQuery = '';
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Search Service Providers'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    decoration: const InputDecoration(
+                      hintText: 'Enter company name or service',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        searchQuery = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 50),
+                  searchQuery.isNotEmpty
+                      ? StreamBuilder<QuerySnapshot>(
+                          stream: FirebaseFirestore.instance
+                              .collection('Service Provider')
+                              .where('companyName',
+                                  isGreaterThanOrEqualTo: searchQuery)
+                              .where('service',
+                                  isLessThanOrEqualTo: '$searchQuery\uf8ff')
+                              .snapshots(),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            }
+
+                            var results = snapshot.data!.docs;
+
+                            if (results.isEmpty) {
+                              return const Text('No results found');
+                            }
+
+                            return SizedBox(
+                              height: 200,
+                              child: ListView.builder(
+                                shrinkWrap: true,
+                                itemCount: results.length,
+                                itemBuilder: (context, index) {
+                                  var data = results[index].data()
+                                      as Map<String, dynamic>;
+                                  return ListTile(
+                                    title: Text(data['companyName']),
+                                    subtitle: Text(data['service']),
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        )
+                      : Container(),
+                ],
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Close'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
-  }
-
-  // Function to deactivate the account
-  Future<void> _deactivateAccount() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      // Delete user from Firestore
-      await _firestore.collection('users').doc(user.uid).delete();
-
-      // Delete user account
-      await user.delete();
-
-      // Sign out and redirect to main page
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const MainPage()),
-        (Route<dynamic> route) => false,
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Your account has been deactivated.')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No user is currently signed in.')),
-      );
-    }
   }
 }

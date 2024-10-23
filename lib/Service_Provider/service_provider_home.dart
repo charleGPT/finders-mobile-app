@@ -1,9 +1,11 @@
 import 'package:finders_v1_1/Client/screens/faqs_page.dart';
 import 'package:finders_v1_1/Service_Provider/service_Appointment.dart';
+import 'package:finders_v1_1/about_us.dart';
 import 'package:finders_v1_1/Client/screens/all_companies.dart';
+//import 'package:finders_v1_1/Client/appointment_page.dart';
+import 'package:finders_v1_1/Client/screens/booking.dart';
 import 'package:finders_v1_1/Client/screens/client_profile.dart';
 import 'package:finders_v1_1/Client/screens/contact_us.dart';
-import 'package:finders_v1_1/about_us.dart';
 import 'package:finders_v1_1/main_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -22,6 +24,8 @@ class _ServiceProviderHomeState extends State<ServiceProviderHome> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   List<String> categories = ['Household', 'Beauty', 'Electronics', 'Other'];
   String? selectedCategory;
+  String? companyName;
+  String? address;
 
   // Function to filter companies by category
   Stream<QuerySnapshot> getCompaniesStream() {
@@ -35,9 +39,14 @@ class _ServiceProviderHomeState extends State<ServiceProviderHome> {
     }
   }
 
+  // Fetch service providers from Firestore
+  Stream<QuerySnapshot> getServiceProviders() {
+    return _firestore.collection('Service Provider').snapshots();
+  }
+
   late final List<Widget> screens = [
     StreamBuilder<QuerySnapshot>(
-      stream: getCompaniesStream(),
+      stream: getServiceProviders(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -80,7 +89,11 @@ class _ServiceProviderHomeState extends State<ServiceProviderHome> {
       },
     ),
     const Center(child: AllCompaniesPage()),
-    const Center(child: ServiceProviderAppointmentPage(companyName: '')),
+    //const Center(child: AppointmentPage()),
+    const Center(
+        child: ServiceProviderAppointmentPage(
+      companyName: '',
+    )),
     const Center(child: ContactUsPage()),
   ];
 
@@ -144,13 +157,35 @@ class _ServiceProviderHomeState extends State<ServiceProviderHome> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.info),
+              leading: const Icon(Icons.question_answer),
               title: const Text('FAQs'),
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const FAQsPage()),
                 );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete),
+              title: const Text('Deactivate Account'),
+              onTap: () async {
+                final user = FirebaseAuth.instance.currentUser;
+                if (user != null) {
+                  // Delete user from Firestore 'users' collection
+                  await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .delete();
+                  await user.delete(); // Deletes the Firebase Auth user
+
+                  // Navigate to MainPage or show confirmation
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const MainPage()),
+                    (Route<dynamic> route) => false,
+                  );
+                }
               },
             ),
             ListTile(
@@ -163,31 +198,6 @@ class _ServiceProviderHomeState extends State<ServiceProviderHome> {
                   MaterialPageRoute(builder: (context) => const MainPage()),
                   (Route<dynamic> route) => false,
                 );
-              },
-            ),
-            SizedBox(
-              height: 350,
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete),
-              title: const Text('Account Deactivation'),
-              onTap: () async {
-                final user = FirebaseAuth.instance.currentUser;
-
-                if (user != null) {
-                  // Delete user from Firestore 'Service Provider' collection
-                  await _firestore
-                      .collection('Service Provider')
-                      .doc(user.uid)
-                      .delete();
-                  await user.delete();
-                  // Navigate to MainPage or show confirmation
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => const MainPage()),
-                    (Route<dynamic> route) => false,
-                  );
-                }
               },
             ),
           ],
@@ -264,7 +274,38 @@ class _ServiceProviderHomeState extends State<ServiceProviderHome> {
                           trailing: IconButton(
                             icon: const Icon(Icons.info),
                             onPressed: () {
-                              Navigator.pushNamed(context, '/bookingPage');
+                              // Navigate to the BookingPage with service provider details
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => BookingPage(
+                                    companyName: serviceProvider['companyName'],
+                                    address: serviceProvider['address'],
+                                    // Change this part to check if 'services' is a String or List
+                                    services: serviceProvider['service'] is List
+                                        ? List<String>.from(
+                                            serviceProvider['service'])
+                                        : [serviceProvider['service']],
+                                    // Adjust this part similarly for 'prices'
+                                    prices: serviceProvider['price'] is List
+                                        ? List<double>.from(
+                                            serviceProvider['price'].map(
+                                                (price) => price is int
+                                                    ? price.toDouble()
+                                                    : price))
+                                        : [
+                                            serviceProvider['price'] is int
+                                                ? serviceProvider['price']
+                                                    .toDouble()
+                                                : serviceProvider['price']
+                                          ],
+                                    serviceProviderId:
+                                        serviceProvider['serviceProviderId'],
+                                    providerId:
+                                        serviceProvider['serviceProviderId'], quantities: [],
+                                  ),
+                                ),
+                              );
                             },
                           ),
                         ),
@@ -274,16 +315,109 @@ class _ServiceProviderHomeState extends State<ServiceProviderHome> {
                 },
               ),
             ),
-          if (indexClicked == 2)
-            const Center(
-                child: ServiceProviderAppointmentPage(companyName: '')),
-          if (indexClicked == 3) const Center(child: ContactUsPage()),
+          if (indexClicked != 0 && indexClicked != 1)
+            Expanded(child: screens[indexClicked]),
         ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Colors.blue,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.business), label: 'Companies'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.event), label: 'Appointments'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.contact_mail), label: 'Contact Us'),
+        ],
+        currentIndex: indexClicked,
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.black,
+        onTap: (index) {
+          setState(() {
+            indexClicked = index;
+            selectedCategory = null;
+          });
+        },
       ),
     );
   }
 
-  Future<void> showSearchDialog(BuildContext context) async {
-    // Your existing search dialog code
+  void showSearchDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        String searchQuery = '';
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Search Service Providers'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    decoration: const InputDecoration(
+                      hintText: 'Enter company name or service',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        searchQuery = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 50),
+                  searchQuery.isNotEmpty
+                      ? StreamBuilder<QuerySnapshot>(
+                          stream: FirebaseFirestore.instance
+                              .collection('Service Provider')
+                              .where('companyName',
+                                  isGreaterThanOrEqualTo: searchQuery)
+                              .where('service',
+                                  isLessThanOrEqualTo: '$searchQuery\uf8ff')
+                              .snapshots(),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            }
+
+                            var results = snapshot.data!.docs;
+
+                            if (results.isEmpty) {
+                              return const Text('No results found');
+                            }
+
+                            return SizedBox(
+                              height: 200,
+                              child: ListView.builder(
+                                shrinkWrap: true,
+                                itemCount: results.length,
+                                itemBuilder: (context, index) {
+                                  var data = results[index].data()
+                                      as Map<String, dynamic>;
+                                  return ListTile(
+                                    title: Text(data['companyName']),
+                                    subtitle: Text(data['service']),
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        )
+                      : Container(),
+                ],
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Close'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 }

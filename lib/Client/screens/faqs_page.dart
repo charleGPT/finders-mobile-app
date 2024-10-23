@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FAQsPage extends StatelessWidget {
-  const FAQsPage({Key? key}) : super(key: key);
+  const FAQsPage({super.key});
 
   // Fetch FAQs from Firestore
   Stream<QuerySnapshot> _fetchFAQs() {
