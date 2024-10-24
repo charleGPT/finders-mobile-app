@@ -3,6 +3,7 @@
 import 'package:finders_v1_1/Client/screens/client_home.dart';
 import 'package:finders_v1_1/Client/screens/faqs_page.dart';
 import 'package:finders_v1_1/Service_Provider/service_Appointment.dart';
+import 'package:finders_v1_1/Service_Provider/service_details.dart';
 import 'package:finders_v1_1/cipc.dart';
 import 'package:finders_v1_1/Client/screens/all_companies.dart';
 
@@ -26,6 +27,7 @@ class RouteManager {
   //   a main landing page
   static const String mainPage = '/';
   static const String splash = '/splash';
+  static const String serviceDetailsPage = '/serviceDetailsPage';
   static const String clientHomePage = '/clientHomePage';
   static const String allCompaniesPage = '/allCompaniesPage';
   static const String cipc = '/cipc';
@@ -70,6 +72,12 @@ class RouteManager {
       case clientRegistrationPage:
         return MaterialPageRoute(
             builder: (context) => const ClientRegistrationPage());
+
+      case serviceDetailsPage:
+        return MaterialPageRoute(
+            builder: (context) => const ServiceDetailsPage(
+                  appointmentReference: '',
+                ));
 
       case appointmentPage:
         return MaterialPageRoute(builder: (context) => const AppointmentPage());

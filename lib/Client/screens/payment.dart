@@ -12,6 +12,7 @@ class PaymentPage extends StatefulWidget {
   final List<double> prices;
   final double totalPrice;
   final String serviceProviderId;
+  final List<int> quantities;
 
   const PaymentPage({
     super.key,
@@ -21,7 +22,7 @@ class PaymentPage extends StatefulWidget {
     required this.address,
     required this.prices,
     required this.totalPrice,
-    required List<int> quantities,
+    required this.quantities,
   });
 
   @override
@@ -56,11 +57,13 @@ class _PaymentPageState extends State<PaymentPage> {
 
   // Save booking details to Firestore
   Future<void> saveBookingDetails(
-      String userId,
-      String userName,
-      String serviceProviderId,
-      String companyName,
-      BuildContext context) async {
+    String userId,
+    List<int> quantities,
+    String userName,
+    String serviceProviderId,
+    String companyName,
+    BuildContext context,
+  ) async {
     try {
       String bookingRef = DateTime.now().millisecondsSinceEpoch.toString();
       await FirebaseFirestore.instance
@@ -69,13 +72,12 @@ class _PaymentPageState extends State<PaymentPage> {
           .set({
         'userId': userId,
         'userName': userName,
-        'serviceProviderId': widget.serviceProviderId, // Correct variable usage
+        'serviceProviderId': serviceProviderId,
         'companyName': companyName,
         'services': widget.services,
         'address': widget.address,
-        'prices': widget.prices
-            .map((prices) => prices.toStringAsFixed(2))
-            .toList(), // Convert to string
+        'prices': widget.prices.map((price) => price).toList(),
+        'quantities': quantities, // Save the quantities
         'totalPrice': widget.totalPrice,
         'date': DateTime.now(),
         'status': 'pending',
@@ -139,117 +141,123 @@ class _PaymentPageState extends State<PaymentPage> {
         title: const Text('Payment'),
         backgroundColor: Colors.blueAccent[100],
       ),
-      body: FutureBuilder<Map<String, String>>(
-        future: fetchClientData(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return const Center(child: Text('Error fetching user data'));
-          } else {
-            String userId = snapshot.data?['userId'] ?? "unknown-user";
-            String userName = snapshot.data?['userName'] ?? "Unknown User";
+      body: SingleChildScrollView(
+        child: FutureBuilder<Map<String, String>>(
+          future: fetchClientData(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return const Center(child: Text('Error fetching user data'));
+            } else {
+              String userId = snapshot.data?['userId'] ?? "unknown-user";
+              String userName = snapshot.data?['userName'] ?? "Unknown User";
 
-            return Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Payment Details',
-                      style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 16),
-                    Text('Company: ${widget.companyName}',
-                        style: const TextStyle(fontSize: 18)),
-                    Text('Services: ${widget.services.join(", ")}',
-                        style: const TextStyle(fontSize: 18)),
-                    Text('Address: ${widget.address}',
-                        style: const TextStyle(fontSize: 18)),
-                    Text('Price: R${widget.prices.join(", ")}',
-                        style: const TextStyle(fontSize: 18)),
-                    Text('Total: R${widget.totalPrice.toStringAsFixed(2)}',
-                        style: const TextStyle(fontSize: 18)),
-                    const SizedBox(height: 16),
-                    const Text('Please enter your payment details below:',
-                        style: TextStyle(fontSize: 16)),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _cardNumberController,
-                      decoration: const InputDecoration(
-                        labelText: 'Card Number',
-                        border: OutlineInputBorder(),
+              return Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Payment Details',
+                        style: TextStyle(
+                            fontSize: 24, fontWeight: FontWeight.bold),
                       ),
-                      maxLength: 16,
-                      keyboardType: TextInputType.number,
-                      validator: _validateCardNumber,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _cvvController,
-                      decoration: const InputDecoration(
-                        labelText: 'CVV',
-                        border: OutlineInputBorder(),
+                      const SizedBox(height: 16),
+                      Text('Company: ${widget.companyName}',
+                          style: const TextStyle(fontSize: 18)),
+                      Text('Services: ${widget.services.join(", ")}',
+                          style: const TextStyle(fontSize: 18)),
+                      Text('Address: ${widget.address}',
+                          style: const TextStyle(fontSize: 18)),
+                      Text(
+                          'Prices: ${widget.prices.map((price) => 'R${price.toStringAsFixed(2)}').join(", ")}',
+                          style: const TextStyle(fontSize: 18)),
+                      Text('Quantities: ${widget.quantities.join(", ")}',
+                          style: const TextStyle(fontSize: 18)),
+                      Text('Total: R${widget.totalPrice.toStringAsFixed(2)}',
+                          style: const TextStyle(fontSize: 18)),
+                      const SizedBox(height: 16),
+                      const Text('Please enter your payment details below:',
+                          style: TextStyle(fontSize: 16)),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _cardNumberController,
+                        decoration: const InputDecoration(
+                          labelText: 'Card Number',
+                          border: OutlineInputBorder(),
+                        ),
+                        maxLength: 16,
+                        keyboardType: TextInputType.number,
+                        validator: _validateCardNumber,
                       ),
-                      maxLength: 3,
-                      keyboardType: TextInputType.number,
-                      obscureText: true,
-                      validator: _validateCvv,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _expiryController,
-                      decoration: const InputDecoration(
-                        labelText: 'Expiry Date (MM/YY)',
-                        border: OutlineInputBorder(),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _cvvController,
+                        decoration: const InputDecoration(
+                          labelText: 'CVV',
+                          border: OutlineInputBorder(),
+                        ),
+                        maxLength: 3,
+                        keyboardType: TextInputType.number,
+                        obscureText: true,
+                        validator: _validateCvv,
                       ),
-                      maxLength: 5,
-                      keyboardType: TextInputType.datetime,
-                      validator: _validateExpiry,
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
-                          await saveBookingDetails(
-                            userId,
-                            userName,
-                            widget.serviceProviderId,
-                            widget.companyName,
-                            context,
-                          );
-                          if (!mounted) return;
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _expiryController,
+                        decoration: const InputDecoration(
+                          labelText: 'Expiry Date (MM/YY)',
+                          border: OutlineInputBorder(),
+                        ),
+                        maxLength: 5,
+                        keyboardType: TextInputType.text,
+                        validator: _validateExpiry,
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () async {
+                          if (_formKey.currentState!.validate()) {
+                            await saveBookingDetails(
+                              userId,
+                              widget.quantities,
+                              userName,
+                              widget.serviceProviderId,
+                              widget.companyName,
+                              context,
+                            );
+                            if (!mounted) return;
 
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('Payment Successful!')),
-                          );
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const BookingConfirmationPage(),
-                            ),
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange[300],
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 30, vertical: 10),
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Payment Successful!')),
+                            );
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const BookingConfirmationPage(),
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange[300],
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 30, vertical: 10),
+                        ),
+                        child: const Text('Pay Now',
+                            style: TextStyle(fontSize: 16)),
                       ),
-                      child:
-                          const Text('Pay Now', style: TextStyle(fontSize: 16)),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            );
-          }
-        },
+              );
+            }
+          },
+        ),
       ),
     );
   }

@@ -162,28 +162,6 @@ class _ClientHomePageState extends State<ClientHomePage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete),
-              title: const Text('Deactivate Account'),
-              onTap: () async {
-                final user = FirebaseAuth.instance.currentUser;
-                if (user != null) {
-                  // Delete user from Firestore 'users' collection
-                  await FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(user.uid)
-                      .delete();
-                  await user.delete(); // Deletes the Firebase Auth user
-
-                  // Navigate to MainPage or show confirmation
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => const MainPage()),
-                    (Route<dynamic> route) => false,
-                  );
-                }
-              },
-            ),
-            ListTile(
               leading: const Icon(Icons.logout),
               title: const Text('Logout'),
               onTap: () async {
@@ -192,6 +170,59 @@ class _ClientHomePageState extends State<ClientHomePage> {
                   context,
                   MaterialPageRoute(builder: (context) => const MainPage()),
                   (Route<dynamic> route) => false,
+                );
+              },
+            ),
+            SizedBox(
+              height: 350,
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete),
+              title: const Text('Deactivate Account'),
+              onTap: () async {
+                // Show confirmation dialog
+                showDialog(
+                  context: context,
+                  barrierDismissible:
+                      false, // Prevents dismissal by tapping outside
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: const Text('Confirm Deactivation'),
+                      content: const Text(
+                          'Are you sure you want to deactivate your account? This action cannot be undone.'),
+                      actions: <Widget>[
+                        TextButton(
+                          child: const Text('Cancel'),
+                          onPressed: () {
+                            Navigator.of(context).pop(); // Close the dialog
+                          },
+                        ),
+                        TextButton(
+                          child: const Text('Confirm'),
+                          onPressed: () async {
+                            final user = FirebaseAuth.instance.currentUser;
+                            if (user != null) {
+                              // Delete user from Firestore 'users' collection
+                              await FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(user.uid)
+                                  .delete();
+                              await user
+                                  .delete(); // Deletes the Firebase Auth user
+
+                              // Navigate to MainPage
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const MainPage()),
+                                (Route<dynamic> route) => false,
+                              );
+                            }
+                          },
+                        ),
+                      ],
+                    );
+                  },
                 );
               },
             ),

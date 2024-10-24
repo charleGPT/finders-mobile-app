@@ -40,20 +40,45 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _loadUserData() async {
     User? user = _auth.currentUser;
     if (user != null) {
-      DocumentSnapshot userData =
-          await _firestore.collection('users').doc(user.uid).get();
-      if (userData.exists) {
-        print(userData.data()); // Log the document data for debugging
+      try {
+        DocumentSnapshot userData =
+            await _firestore.collection('users').doc(user.uid).get();
+        if (userData.exists) {
+          print(userData.data()); // Log the document data for debugging
+          setState(() {
+            _nameController.text = userData['name'] ?? '';
+            _surnameController.text = userData['surname'] ?? '';
+            _email = userData['email'] ?? '';
+            _addressController.text = userData['address'] ?? '';
+            _contactsController.text = userData['contacts'] ?? '';
+            _profilePictureUrl = userData['profilePicture'] ?? null;
+            print("Profile Picture URL: $_profilePictureUrl"); // Debug print
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _isLoading = false; // Stop loading if no data
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No user data found.')),
+          );
+        }
+      } catch (e) {
         setState(() {
-          _nameController.text = userData['name'] ?? '';
-          _surnameController.text = userData['surname'] ?? '';
-          _email = userData['email'] ?? '';
-          _addressController.text = userData['address'] ?? '';
-          _contactsController.text = userData['contacts'] ?? '';
-          _profilePictureUrl = userData['profilePicture'] ?? null;
-          _isLoading = false;
+          _isLoading = false; // Stop loading on error
         });
+        print("Error loading user data: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading data: $e')),
+        );
       }
+    } else {
+      setState(() {
+        _isLoading = false; // Stop loading if user is null
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('User not authenticated.')),
+      );
     }
   }
 

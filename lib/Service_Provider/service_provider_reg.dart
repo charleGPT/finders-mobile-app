@@ -1,5 +1,5 @@
 // ignore_for_file: library_private_types_in_public_api, use_build_context_synchronously
-import 'dart:math'; //randomize
+import 'dart:math'; // randomize
 import 'package:finders_v1_1/Service_Provider/service_provider_login.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -55,7 +55,7 @@ class _PartnerRegistrationPageState extends State<PartnerRegistrationPage> {
     return result.docs.isNotEmpty; // Returns true if the company name exists
   }
 
-// Function to generate a 5-digit random number as a String
+  // Function to generate a 5-digit random number as a String
   String generateServiceProviderId() {
     var random = Random();
     int randomNumber = 10000 +
@@ -110,17 +110,18 @@ class _PartnerRegistrationPageState extends State<PartnerRegistrationPage> {
             .collection('Service Provider')
             .doc(userCredential.user!.uid)
             .set({
-          'companyName': _companyNameController.text,
-          'registrationNumber': _registrationNumberController.text,
-          'address': _addressController.text,
-          'email': _emailController.text,
+          'companyName': _companyNameController.text.trim(),
+          'registrationNumber': _registrationNumberController.text.trim(),
+          'address': _addressController.text.trim(),
+          'email': _emailController.text.trim(),
           'category': selectedCategory,
-          'service': _serviceController.text,
+          'service': _serviceController.text.trim(),
           'price': _priceController.text.isEmpty
               ? null
-              : double.tryParse(_priceController.text), // Nullable price
+              : double.tryParse(_priceController.text.trim()), // Nullable price
           'serviceProviderId':
               serviceProviderId, // Add the serviceProviderId here
+          'profilePicture': null, // Make profilePicture nullable
           'dateJoined': DateTime.now(),
         });
 

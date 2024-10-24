@@ -111,6 +111,7 @@ class _ServiceProviderLoginPageState extends State<ServiceProviderLoginPage> {
                             borderRadius: BorderRadius.circular(10.0),
                           ),
                         ),
+                        keyboardType: TextInputType.text,
                         obscureText: true,
                         validator: (value) {
                           if (value == null || value.isEmpty) {

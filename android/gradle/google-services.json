@@ -3,7 +3,8 @@
     "project_number": "1056042698190",
     "firebase_url": "https://findersmvc-default-rtdb.firebaseio.com",
     "project_id": "findersmvc",
-    "storage_bucket": "findersmvc.appspot.com"
+    "storage_bucket":  "gs://findersmvc.appspot.com"
+    
   },
   "client": [
     {

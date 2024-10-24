@@ -2,11 +2,11 @@ import 'package:finders_v1_1/Client/screens/appointment_page.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class AppointmentDetailsPage extends StatelessWidget {
+class ServiceDetailsPage extends StatelessWidget {
   final String
       appointmentReference; // Document ID passed from the previous page.
 
-  const AppointmentDetailsPage({super.key, required this.appointmentReference});
+  const ServiceDetailsPage({super.key, required this.appointmentReference});
 
   Future<DocumentSnapshot> _fetchAppointmentDetails() async {
     return await FirebaseFirestore.instance
@@ -149,18 +149,18 @@ class AppointmentDetailsPage extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text('Address: $address'),
                 const SizedBox(height: 40),
-                if (status == 'pending') ...[
-                  ElevatedButton(
-                    onPressed: () => _showConfirmationDialog(context, status),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red, // Red color for cancel
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 30, vertical: 10),
-                    ),
-                    child: const Text('Cancel Appointment',
-                        style: TextStyle(fontSize: 16)),
-                  ),
-                ],
+                // if (status == 'pending') ...[
+                //   ElevatedButton(
+                //     onPressed: () => _showConfirmationDialog(context, status),
+                //     style: ElevatedButton.styleFrom(
+                //       backgroundColor: Colors.red, // Red color for cancel
+                //       padding: const EdgeInsets.symmetric(
+                //           horizontal: 30, vertical: 10),
+                //     ),
+                //     child: const Text('Cancel Appointment',
+                //         style: TextStyle(fontSize: 16)),
+                //   ),
+                // ],
               ],
             ),
           );

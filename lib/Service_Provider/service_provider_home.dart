@@ -1,4 +1,7 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:finders_v1_1/Client/screens/faqs_page.dart';
+import 'package:finders_v1_1/Service_Provider/provider_profile.dart';
 import 'package:finders_v1_1/Service_Provider/service_Appointment.dart';
 import 'package:finders_v1_1/about_us.dart';
 import 'package:finders_v1_1/Client/screens/all_companies.dart';
@@ -108,7 +111,8 @@ class _ServiceProviderHomeState extends State<ServiceProviderHome> {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const ProfilePage()),
+              MaterialPageRoute(
+                  builder: (context) => const ServiceProfilePage()),
             );
           },
           child: const Padding(
@@ -167,28 +171,6 @@ class _ServiceProviderHomeState extends State<ServiceProviderHome> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete),
-              title: const Text('Deactivate Account'),
-              onTap: () async {
-                final user = FirebaseAuth.instance.currentUser;
-                if (user != null) {
-                  // Delete user from Firestore 'users' collection
-                  await FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(user.uid)
-                      .delete();
-                  await user.delete(); // Deletes the Firebase Auth user
-
-                  // Navigate to MainPage or show confirmation
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => const MainPage()),
-                    (Route<dynamic> route) => false,
-                  );
-                }
-              },
-            ),
-            ListTile(
               leading: const Icon(Icons.logout),
               title: const Text('Logout'),
               onTap: () async {
@@ -197,6 +179,59 @@ class _ServiceProviderHomeState extends State<ServiceProviderHome> {
                   context,
                   MaterialPageRoute(builder: (context) => const MainPage()),
                   (Route<dynamic> route) => false,
+                );
+              },
+            ),
+            SizedBox(
+              height: 350,
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete),
+              title: const Text('Deactivate Account'),
+              onTap: () async {
+                // Show confirmation dialog
+                showDialog(
+                  context: context,
+                  barrierDismissible:
+                      false, // Prevents dismissal by tapping outside
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: const Text('Confirm Deactivation'),
+                      content: const Text(
+                          'Are you sure you want to deactivate your account? This action cannot be undone.'),
+                      actions: <Widget>[
+                        TextButton(
+                          child: const Text('Cancel'),
+                          onPressed: () {
+                            Navigator.of(context).pop(); // Close the dialog
+                          },
+                        ),
+                        TextButton(
+                          child: const Text('Confirm'),
+                          onPressed: () async {
+                            final user = FirebaseAuth.instance.currentUser;
+                            if (user != null) {
+                              // Delete user from Firestore 'users' collection
+                              await FirebaseFirestore.instance
+                                  .collection('Service Provider')
+                                  .doc(user.uid)
+                                  .delete();
+                              await user
+                                  .delete(); // Deletes the Firebase Auth user
+
+                              // Navigate to MainPage
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const MainPage()),
+                                (Route<dynamic> route) => false,
+                              );
+                            }
+                          },
+                        ),
+                      ],
+                    );
+                  },
                 );
               },
             ),
@@ -302,7 +337,8 @@ class _ServiceProviderHomeState extends State<ServiceProviderHome> {
                                     serviceProviderId:
                                         serviceProvider['serviceProviderId'],
                                     providerId:
-                                        serviceProvider['serviceProviderId'], quantities: [],
+                                        serviceProvider['serviceProviderId'],
+                                    quantities: [],
                                   ),
                                 ),
                               );
@@ -331,7 +367,7 @@ class _ServiceProviderHomeState extends State<ServiceProviderHome> {
               icon: Icon(Icons.contact_mail), label: 'Contact Us'),
         ],
         currentIndex: indexClicked,
-        selectedItemColor: Colors.white,
+        selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.black,
         onTap: (index) {
           setState(() {

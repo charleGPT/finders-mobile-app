@@ -45,6 +45,10 @@ class _BookingPageState extends State<BookingPage> {
     });
   }
 
+  bool isAnyServiceSelected() {
+    return quantities.any((quantity) => quantity > 0);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -61,20 +65,24 @@ class _BookingPageState extends State<BookingPage> {
             Center(
               child: Text(
                 widget.companyName,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Center(
-                child: Text(widget.address,
-                    style: TextStyle(fontSize: 16, color: Colors.grey))),
-            SizedBox(height: 16),
+              child: Text(
+                widget.address,
+                style: const TextStyle(fontSize: 16, color: Colors.grey),
+              ),
+            ),
+            const SizedBox(height: 16),
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: Color.fromARGB(183, 245, 218, 159),
+                  color: const Color.fromARGB(183, 245, 218, 159),
                   borderRadius: BorderRadius.circular(4.0),
-                  boxShadow: [
+                  boxShadow: const [
                     BoxShadow(
                       color: Colors.black26,
                       blurRadius: 4.0,
@@ -90,16 +98,18 @@ class _BookingPageState extends State<BookingPage> {
                       children: [
                         Text(
                           widget.services[index],
-                          style: TextStyle(fontSize: 16, color: Colors.black),
+                          style: const TextStyle(
+                              fontSize: 16, color: Colors.black),
                         ),
                         Text(
                           'R${widget.prices[index].toStringAsFixed(2)}',
-                          style: TextStyle(fontSize: 16, color: Colors.black),
+                          style: const TextStyle(
+                              fontSize: 16, color: Colors.black),
                         ),
                         Row(
                           children: [
                             IconButton(
-                              icon: Icon(Icons.remove_circle_outline,
+                              icon: const Icon(Icons.remove_circle_outline,
                                   color: Colors.black),
                               onPressed: () {
                                 if (quantities[index] > 0) {
@@ -112,10 +122,10 @@ class _BookingPageState extends State<BookingPage> {
                             ),
                             Text(
                               quantities[index].toString(),
-                              style: TextStyle(color: Colors.black),
+                              style: const TextStyle(color: Colors.black),
                             ),
                             IconButton(
-                              icon: Icon(Icons.add_circle_outline,
+                              icon: const Icon(Icons.add_circle_outline,
                                   color: Colors.black),
                               onPressed: () {
                                 setState(() {
@@ -132,42 +142,43 @@ class _BookingPageState extends State<BookingPage> {
                 ),
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   'TOTAL: R${totalPrice.toStringAsFixed(2)}',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PaymentPage(
-                          companyName: widget.companyName,
-                          address: widget.address,
-                          services: widget.services,
-                          prices: widget.prices,
-                          totalPrice: totalPrice,
-                          serviceProviderId: widget.serviceProviderId,
-                          quantities: quantities,
-                          // providerId: widget.providerId, service: [],
-                          //serviceProviderDocId: '',
-                          //services: [],
-                        ),
-                      ),
-                    );
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Proceed to Payment')),
-                    );
-                  },
+                  onPressed: isAnyServiceSelected()
+                      ? () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PaymentPage(
+                                companyName: widget.companyName,
+                                address: widget.address,
+                                services: widget.services,
+                                prices: widget.prices,
+                                totalPrice: totalPrice,
+                                serviceProviderId: widget.serviceProviderId,
+                                quantities: quantities,
+                              ),
+                            ),
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Proceed to Payment')),
+                          );
+                        }
+                      : null, // Disable button if no service is selected
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange[300],
-                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 30, vertical: 10),
                   ),
-                  child: Text('Book Now', style: TextStyle(fontSize: 16)),
+                  child: const Text('Book Now', style: TextStyle(fontSize: 16)),
                 ),
               ],
             ),
