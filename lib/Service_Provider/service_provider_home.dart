@@ -7,12 +7,12 @@ import 'package:finders_v1_1/about_us.dart';
 import 'package:finders_v1_1/Client/screens/all_companies.dart';
 //import 'package:finders_v1_1/Client/appointment_page.dart';
 import 'package:finders_v1_1/Client/screens/booking.dart';
-import 'package:finders_v1_1/Client/screens/client_profile.dart';
 import 'package:finders_v1_1/Client/screens/contact_us.dart';
 import 'package:finders_v1_1/main_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
 class ServiceProviderHome extends StatefulWidget {
   const ServiceProviderHome({super.key});
@@ -25,7 +25,15 @@ class _ServiceProviderHomeState extends State<ServiceProviderHome> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   var indexClicked = 0;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  List<String> categories = ['Household', 'Beauty', 'Electronics', 'Other'];
+  List<String> imageUrls = [];
+  List<String> categories = [
+    'IT',
+    'Consulting',
+    'Beauty',
+    'Education',
+    'HouseHold',
+    'Other'
+  ];
   String? selectedCategory;
   String? companyName;
   String? address;
@@ -45,6 +53,47 @@ class _ServiceProviderHomeState extends State<ServiceProviderHome> {
   // Fetch service providers from Firestore
   Stream<QuerySnapshot> getServiceProviders() {
     return _firestore.collection('Service Provider').snapshots();
+  }
+
+  // @override
+  // void initState() {
+  //   super.initState();
+
+  //  getRecentImageUrl(providerId);
+  // }
+
+  // Function to get recent image URL for each service provider
+  Future<String?> getRecentImageUrl(String providerId) async {
+    final imagesSnapshot = await _firestore
+        .collection('Service Provider')
+        .doc(providerId)
+        .collection(
+            'images') // assuming 'images' is a sub-collection for images
+        .orderBy('timestamp', descending: true)
+        .limit(1)
+        .get();
+
+    if (imagesSnapshot.docs.isNotEmpty) {
+      return imagesSnapshot.docs.first['url'];
+    }
+    return null;
+  }
+
+//back fill the missing fields
+  Future<void> backfillServiceProviderFields() async {
+    final serviceProviders =
+        await _firestore.collection('Service Provider').get();
+
+    for (var doc in serviceProviders.docs) {
+      final data = doc.data();
+      if (data['totalRating'] == null || data['ratingCount'] == null) {
+        await _firestore.collection('Service Provider').doc(doc.id).update({
+          'totalRating': data['totalRating'] ?? 0,
+          'ratingCount': data['ratingCount'] ?? 0,
+        });
+        print("Backfilled fields for provider ID: ${doc.id}");
+      }
+    }
   }
 
   late final List<Widget> screens = [
@@ -76,6 +125,7 @@ class _ServiceProviderHomeState extends State<ServiceProviderHome> {
                   children: [
                     Text('Service: ${serviceProvider['service']}'),
                     Text('Email: ${serviceProvider['email']}'),
+                   
                     Text('Address: ${serviceProvider['address']}'),
                   ],
                 ),
@@ -112,7 +162,10 @@ class _ServiceProviderHomeState extends State<ServiceProviderHome> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => const ServiceProfilePage()),
+                  builder: (context) => ServiceProfilePage(
+                        serviceProviderId: '',
+                        companyName: '',
+                      )),
             );
           },
           child: const Padding(
@@ -297,12 +350,75 @@ class _ServiceProviderHomeState extends State<ServiceProviderHome> {
                               'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTOuxrvcNMfGLh73uKP1QqYpKoCB0JLXiBMvA&s',
                             ),
                           ),
-                          title: Text(serviceProvider['companyName']),
+                          title: Expanded(
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: [
+                                  Text(serviceProvider['companyName']),
+                                  SizedBox(
+                                    width: 10,
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      right: 8.0,
+                                    ),
+                                    child: RatingBar.builder(
+                                      itemSize: 15,
+                                      initialRating: (serviceProvider.data()
+                                                      as Map<String, dynamic>)
+                                                  .containsKey('ratingCount') &&
+                                              (serviceProvider.data() as Map<
+                                                      String,
+                                                      dynamic>)['ratingCount'] >
+                                                  0
+                                          ? ((serviceProvider.data()
+                                                          as Map<String, dynamic>)[
+                                                      'totalRating'] ??
+                                                  0) /
+                                              ((serviceProvider.data()
+                                                      as Map<String, dynamic>)['ratingCount'] ??
+                                                  1)
+                                          : 0, // Default to 0 if fields are missing or rating count is 0
+                                      minRating: 1,
+                                      direction: Axis.horizontal,
+                                      allowHalfRating: true,
+                                      itemCount: 5,
+                                      itemPadding: EdgeInsets.zero,
+                                      itemBuilder: (context, _) => const Icon(
+                                        Icons.star,
+                                        color: Colors.amber,
+                                      ),
+                                      onRatingUpdate: (rating) async {
+                                        final serviceProviderId =
+                                            serviceProvider.id;
+
+                                        // Update totalRating and ratingCount atomically in Firestore
+                                        await _firestore
+                                            .collection('Service Provider')
+                                            .doc(serviceProviderId)
+                                            .update({
+                                          'totalRating': FieldValue.increment(
+                                              rating), // Increment total rating
+                                          'ratingCount': FieldValue.increment(
+                                              1), // Increment rating count
+                                        });
+
+                                        print(
+                                            "Updated rating to: $rating for provider ID: $serviceProviderId");
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('Service: ${serviceProvider['service']}'),
-                              Text('Email: ${serviceProvider['email']}'),
+                              // Text('Email: ${serviceProvider['email']}'),
+                             
                               Text('Address: ${serviceProvider['address']}'),
                             ],
                           ),
@@ -355,6 +471,8 @@ class _ServiceProviderHomeState extends State<ServiceProviderHome> {
             Expanded(child: screens[indexClicked]),
         ],
       ),
+
+      
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.blue,
         items: const [

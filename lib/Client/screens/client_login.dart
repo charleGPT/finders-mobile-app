@@ -47,7 +47,9 @@ class _ClientLoginPageState extends State<ClientLoginPage> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => const ClientHomePage(),
+                builder: (context) => const ClientHomePage(
+                  companyName: '', providerId: '', serviceProviderId: '', address: '', services: [], clientId: '', 
+                ),
               ),
             );
           } else {

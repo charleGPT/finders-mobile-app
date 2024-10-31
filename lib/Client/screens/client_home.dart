@@ -1,18 +1,59 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:finders_v1_1/Client/screens/appointment_page.dart';
+import 'package:finders_v1_1/Client/screens/client_profile.dart';
 import 'package:finders_v1_1/Client/screens/faqs_page.dart';
+import 'package:finders_v1_1/Reviews/reviewsPage.dart';
+import 'package:finders_v1_1/Service_Provider/provider_profile.dart';
+
+import 'package:finders_v1_1/Service_Provider/service_info.dart';
 import 'package:finders_v1_1/about_us.dart';
 import 'package:finders_v1_1/Client/screens/all_companies.dart';
-
+//import 'package:finders_v1_1/Client/appointment_page.dart';
 import 'package:finders_v1_1/Client/screens/booking.dart';
-import 'package:finders_v1_1/Client/screens/client_profile.dart';
 import 'package:finders_v1_1/Client/screens/contact_us.dart';
 import 'package:finders_v1_1/main_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
 class ClientHomePage extends StatefulWidget {
-  const ClientHomePage({super.key});
+  final String companyName;
+  final String address;
+  final List<String> services;
+  //final List<double> prices;
+  final String providerId;
+  final String serviceProviderId;
+  final String clientId;
+ 
+
+  const ClientHomePage(
+      {super.key,
+      required this.companyName,
+      required this.providerId,
+      required this.serviceProviderId,
+      required this.address,
+      required this.services,
+      required this.clientId,
+     
+      // required this.prices}
+      });
+
+  Future<String> fetchUserName(String userId) async {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('Users')
+          .doc(userId)
+          .get();
+      if (userDoc.exists) {
+        return userDoc['username']; // Adjust the field name if necessary
+      }
+    } catch (e) {
+      print("Error fetching username: $e");
+    }
+    return "Unknown User"; // Return a default value if the fetch fails
+  }
 
   @override
   State<ClientHomePage> createState() => _ClientHomePageState();
@@ -22,8 +63,18 @@ class _ClientHomePageState extends State<ClientHomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   var indexClicked = 0;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  List<String> categories = ['Household', 'Beauty', 'Electronics', 'Other'];
+  List<String> imageUrls = [];
+  List<String> categories = [
+    'IT',
+    'Consulting',
+    'Beauty',
+    'Education',
+    'HouseHold',
+    'Other'
+  ];
   String? selectedCategory;
+  String? companyName;
+  String? address;
 
   // Function to filter companies by category
   Stream<QuerySnapshot> getCompaniesStream() {
@@ -41,6 +92,51 @@ class _ClientHomePageState extends State<ClientHomePage> {
   Stream<QuerySnapshot> getServiceProviders() {
     return _firestore.collection('Service Provider').snapshots();
   }
+
+  @override
+  void initState() {
+    super.initState();
+
+    fetchImages();
+  }
+
+  void fetchImages() async {
+    try {
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('Service Provider')
+          .where('companyName', isEqualTo: widget.companyName)
+          .get();
+
+      List<String> urls = [];
+      for (var doc in snapshot.docs) {
+        List<dynamic> urlsFromDoc = doc['url'] as List<dynamic>? ?? [];
+        urls.addAll(urlsFromDoc.map((url) => url.toString()).toList());
+      }
+
+      setState(() {
+        imageUrls = urls;
+      });
+    } catch (e) {
+      print("Failed to fetch images: $e");
+    }
+  }
+
+//back fill the missing fields
+  // Future<void> backfillServiceProviderFields() async {
+  //   final serviceProviders =
+  //       await _firestore.collection('Service Provider').get();
+
+  //   for (var doc in serviceProviders.docs) {
+  //     final data = doc.data();
+  //     if (data['totalRating'] == null || data['ratingCount'] == null) {
+  //       await _firestore.collection('Service Provider').doc(doc.id).update({
+  //         'totalRating': data['totalRating'] ?? 0,
+  //         'ratingCount': data['ratingCount'] ?? 0,
+  //       });
+  //       print("Backfilled fields for provider ID: ${doc.id}");
+  //     }
+  //   }
+  // }
 
   late final List<Widget> screens = [
     StreamBuilder<QuerySnapshot>(
@@ -71,6 +167,52 @@ class _ClientHomePageState extends State<ClientHomePage> {
                   children: [
                     Text('Service: ${serviceProvider['service']}'),
                     Text('Email: ${serviceProvider['email']}'),
+                    // imageUrls.isEmpty
+                    //     ? Column(
+                    //         children: [
+                    //           Text("No images available."),
+                    //           SizedBox(height: 10),
+                    //           // ElevatedButton(
+                    //           //   onPressed: () {
+                    //           //     Navigator.push(
+                    //           //       context,
+                    //           //       MaterialPageRoute(
+                    //           //         builder: (context) => UploadPage(),
+                    //           //       ),
+                    //           //     );
+                    //           //   },
+                    //           //   child: Text("Upload Image"),
+                    //           // ),
+                    //         ],
+                    //       )
+                    //     : Container(
+                    //         height: 300,
+                    //         padding: EdgeInsets.all(4.0),
+                    //         decoration: BoxDecoration(
+                    //           borderRadius: BorderRadius.circular(8.0),
+                    //           border: Border.all(
+                    //               color: Colors.blueAccent, width: 2),
+                    //         ),
+                    //         child: GridView.builder(
+                    //           gridDelegate:
+                    //               SliverGridDelegateWithFixedCrossAxisCount(
+                    //             crossAxisCount: 2,
+                    //             mainAxisSpacing: 4,
+                    //             crossAxisSpacing: 4,
+                    //           ),
+                    //           itemCount: imageUrls.length,
+                    //           itemBuilder: (context, index) {
+                    //             return ClipRRect(
+                    //               borderRadius: BorderRadius.circular(8.0),
+                    //               child: Image.network(
+                    //                 imageUrls[index],
+                    //                 fit: BoxFit.cover,
+                    //               ),
+                    //             );
+                    //           },
+                    //         ),
+                    //       ),
+
                     Text('Address: ${serviceProvider['address']}'),
                   ],
                 ),
@@ -88,7 +230,10 @@ class _ClientHomePageState extends State<ClientHomePage> {
     ),
     const Center(child: AllCompaniesPage()),
     const Center(child: AppointmentPage()),
-    //const Center(child: ServiceProviderAppointmentPage()),
+    // const Center(
+    //  child: ServiceProviderAppointmentPage(
+    // companyName: '',
+
     const Center(child: ContactUsPage()),
   ];
 
@@ -103,7 +248,7 @@ class _ClientHomePageState extends State<ClientHomePage> {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const ProfilePage()),
+              MaterialPageRoute(builder: (context) => ProfilePage()),
             );
           },
           child: const Padding(
@@ -204,7 +349,7 @@ class _ClientHomePageState extends State<ClientHomePage> {
                             if (user != null) {
                               // Delete user from Firestore 'users' collection
                               await FirebaseFirestore.instance
-                                  .collection('users')
+                                  .collection('Service Provider')
                                   .doc(user.uid)
                                   .delete();
                               await user
@@ -283,57 +428,175 @@ class _ClientHomePageState extends State<ClientHomePage> {
                         elevation: 4,
                         margin: const EdgeInsets.all(8),
                         child: ListTile(
-                          leading: const CircleAvatar(
-                            backgroundImage: NetworkImage(
-                              'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTOuxrvcNMfGLh73uKP1QqYpKoCB0JLXiBMvA&s',
+                          leading: GestureDetector(
+                            onTap: () {
+                              String clientId = '';
+                              String serviceProviderId = '';
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => ReviewPage(
+                                            clientId: clientId,
+                                            serviceProviderId:
+                                                serviceProviderId,
+                                            username: '',
+                                          )));
+                            },
+                            child: const CircleAvatar(
+                              backgroundImage: NetworkImage(
+                                'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTOuxrvcNMfGLh73uKP1QqYpKoCB0JLXiBMvA&s',
+                              ),
                             ),
                           ),
-                          title: Text(serviceProvider['companyName']),
+                          title: Expanded(
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: [
+                                  Text(serviceProvider['companyName']),
+                                  SizedBox(
+                                    width: 10,
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 8.0),
+                                    child: RatingBar.builder(
+                                      itemSize: 15,
+                                      initialRating: (serviceProvider.data()
+                                                      as Map<String, dynamic>)
+                                                  .containsKey('ratingCount') &&
+                                              (serviceProvider.data() as Map<
+                                                      String,
+                                                      dynamic>)['ratingCount'] >
+                                                  0
+                                          ? ((serviceProvider.data()
+                                                          as Map<String, dynamic>)[
+                                                      'totalRating'] ??
+                                                  0) /
+                                              ((serviceProvider.data()
+                                                      as Map<String, dynamic>)['ratingCount'] ??
+                                                  1)
+                                          : 0, // Default to 0 if fields are missing or rating count is 0
+                                      minRating: 1,
+                                      direction: Axis.horizontal,
+                                      allowHalfRating: true,
+                                      itemCount: 5,
+                                      itemPadding: EdgeInsets.zero,
+                                      itemBuilder: (context, _) => const Icon(
+                                        Icons.star,
+                                        color: Colors.amber,
+                                      ),
+                                      onRatingUpdate: (rating) async {
+                                        final serviceProviderId =
+                                            serviceProvider.id;
+
+                                        // Update totalRating and ratingCount atomically in Firestore
+                                        await _firestore
+                                            .collection('Service Provider')
+                                            .doc(serviceProviderId)
+                                            .update({
+                                          'totalRating': FieldValue.increment(
+                                              rating), // Increment total rating
+                                          'ratingCount': FieldValue.increment(
+                                              1), // Increment rating count
+                                        });
+
+                                        print(
+                                            "Updated rating to: $rating for provider ID: $serviceProviderId");
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('Service: ${serviceProvider['service']}'),
-                              Text('Email: ${serviceProvider['email']}'),
+                              //  Text('Email: ${serviceProvider['email']}'),
+                              imageUrls.isEmpty
+                                  ? Column(
+                                      children: [
+                                        Text("No images available."),
+                                        // SizedBox(height: 10),
+                                      ],
+                                    )
+                                  : Container(
+                                      height: 100,
+                                      padding: EdgeInsets.all(4.0),
+                                      decoration: BoxDecoration(
+                                        borderRadius:
+                                            BorderRadius.circular(8.0),
+                                        border: Border.all(
+                                            color: Colors.blueAccent, width: 2),
+                                      ),
+                                      child: GridView.builder(
+                                        gridDelegate:
+                                            SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: 2,
+                                          mainAxisSpacing: 4,
+                                          crossAxisSpacing: 4,
+                                        ),
+                                        itemCount: 1,
+                                        itemBuilder: (context, index) {
+                                          return ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(8.0),
+                                            child: Image.network(
+                                              imageUrls[index],
+                                              fit: BoxFit.cover,
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
                               Text('Address: ${serviceProvider['address']}'),
                             ],
                           ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.info),
-                            onPressed: () {
-                              // Navigate to the BookingPage with service provider details
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => BookingPage(
-                                    companyName: serviceProvider['companyName'],
-                                    address: serviceProvider['address'],
-                                    // Change this part to check if 'services' is a String or List
-                                    services: serviceProvider['service'] is List
-                                        ? List<String>.from(
-                                            serviceProvider['service'])
-                                        : [serviceProvider['service']],
-                                    // Adjust this part similarly for 'prices'
-                                    prices: serviceProvider['price'] is List
-                                        ? List<double>.from(
-                                            serviceProvider['price'].map(
-                                                (price) => price is int
-                                                    ? price.toDouble()
-                                                    : price))
-                                        : [
-                                            serviceProvider['price'] is int
-                                                ? serviceProvider['price']
-                                                    .toDouble()
-                                                : serviceProvider['price']
-                                          ],
-                                    serviceProviderId:
-                                        serviceProvider['serviceProviderId'],
-                                    providerId:
-                                        serviceProvider['serviceProviderId'],
-                                    quantities: [],
-                                  ),
-                                ),
-                              );
-                            },
+                          trailing: Column(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.info),
+                                onPressed: () {
+                                  // Navigate to the BookingPage with service provider details
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => BookingPage(
+                                        companyName:
+                                            serviceProvider['companyName'],
+                                        address: serviceProvider['address'],
+                                        // Change this part to check if 'services' is a String or List
+                                        services:
+                                            serviceProvider['service'] is List
+                                                ? List<String>.from(
+                                                    serviceProvider['service'])
+                                                : [serviceProvider['service']],
+                                        // Adjust this part similarly for 'prices'
+                                        prices: serviceProvider['price'] is List
+                                            ? List<double>.from(
+                                                serviceProvider['price'].map(
+                                                    (price) => price is int
+                                                        ? price.toDouble()
+                                                        : price))
+                                            : [
+                                                serviceProvider['price'] is int
+                                                    ? serviceProvider['price']
+                                                        .toDouble()
+                                                    : serviceProvider['price']
+                                              ],
+                                        serviceProviderId: serviceProvider[
+                                            'serviceProviderId'],
+                                        providerId: serviceProvider[
+                                            'serviceProviderId'],
+                                        quantities: [],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              
+                            ],
                           ),
                         ),
                       );
@@ -349,22 +612,13 @@ class _ClientHomePageState extends State<ClientHomePage> {
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.blue,
         items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
+              icon: Icon(Icons.business), label: 'Companies'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.business),
-            label: 'Companies',
-          ),
+              icon: Icon(Icons.event), label: 'Appointments'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.event),
-            label: 'Appointments',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.contact_mail),
-            label: 'Contact Us',
-          ),
+              icon: Icon(Icons.contact_mail), label: 'Contact Us'),
         ],
         currentIndex: indexClicked,
         selectedItemColor: Colors.blue,

@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element, use_build_context_synchronously
+
 import 'package:finders_v1_1/Client/screens/appointment_page.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -11,8 +13,7 @@ class ServiceDetailsPage extends StatelessWidget {
   Future<DocumentSnapshot> _fetchAppointmentDetails() async {
     return await FirebaseFirestore.instance
         .collection('appointments')
-        .doc(
-            appointmentReference) // Fetch document using the passed document ID.
+        .doc(appointmentReference) // Fetch document using the passed document ID.
         .get();
   }
 
@@ -110,7 +111,14 @@ class ServiceDetailsPage extends StatelessWidget {
 
           // Handle 'services' as a List
           var services = appointmentData['services'];
-          String servicesText = services is List ? services.join(', ') : 'N/A';
+          String servicesText = '';
+          if (services is List) {
+            servicesText = services.map((service) => service.toString()).join(', ');
+          } else if (services is Map) {
+            servicesText = services.values.join(', ');
+          } else {
+            servicesText = services.toString();
+          }
 
           // Handle 'quantities' as a List
           var quantities = appointmentData['quantities'] ?? [];
@@ -150,17 +158,17 @@ class ServiceDetailsPage extends StatelessWidget {
                 Text('Address: $address'),
                 const SizedBox(height: 40),
                 // if (status == 'pending') ...[
-                //   ElevatedButton(
-                //     onPressed: () => _showConfirmationDialog(context, status),
-                //     style: ElevatedButton.styleFrom(
-                //       backgroundColor: Colors.red, // Red color for cancel
-                //       padding: const EdgeInsets.symmetric(
-                //           horizontal: 30, vertical: 10),
-                //     ),
-                //     child: const Text('Cancel Appointment',
-                //         style: TextStyle(fontSize: 16)),
-                //   ),
-                // ],
+                //   ElevatedButton(
+                //     onPressed: () => _showConfirmationDialog(context, status),
+                //     style: ElevatedButton.styleFrom(
+                //       backgroundColor: Colors.red, // Red color for cancel
+                //       padding: const EdgeInsets.symmetric(
+                //           horizontal: 30, vertical: 10),
+                //     ),
+                //     child: const Text('Cancel Appointment',
+                //         style: TextStyle(fontSize: 16)),
+                //   ),
+                //   ],
               ],
             ),
           );

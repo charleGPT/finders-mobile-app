@@ -1,9 +1,9 @@
-import 'package:finders_v1_1/Client/screens/details.dart';
+// ignore_for_file: file_names, use_build_context_synchronously, library_private_types_in_public_api
+
 import 'package:finders_v1_1/Service_Provider/service_details.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/rendering.dart';
 
 class ServiceProviderAppointmentPage extends StatefulWidget {
   const ServiceProviderAppointmentPage(
