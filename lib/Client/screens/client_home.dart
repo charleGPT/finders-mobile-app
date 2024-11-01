@@ -4,9 +4,7 @@ import 'package:finders_v1_1/Client/screens/appointment_page.dart';
 import 'package:finders_v1_1/Client/screens/client_profile.dart';
 import 'package:finders_v1_1/Client/screens/faqs_page.dart';
 import 'package:finders_v1_1/Reviews/reviewsPage.dart';
-import 'package:finders_v1_1/Service_Provider/provider_profile.dart';
 
-import 'package:finders_v1_1/Service_Provider/service_info.dart';
 import 'package:finders_v1_1/about_us.dart';
 import 'package:finders_v1_1/Client/screens/all_companies.dart';
 //import 'package:finders_v1_1/Client/appointment_page.dart';
@@ -26,19 +24,18 @@ class ClientHomePage extends StatefulWidget {
   final String providerId;
   final String serviceProviderId;
   final String clientId;
- 
 
-  const ClientHomePage(
-      {super.key,
-      required this.companyName,
-      required this.providerId,
-      required this.serviceProviderId,
-      required this.address,
-      required this.services,
-      required this.clientId,
-     
-      // required this.prices}
-      });
+  const ClientHomePage({
+    super.key,
+    required this.companyName,
+    required this.providerId,
+    required this.serviceProviderId,
+    required this.address,
+    required this.services,
+    required this.clientId,
+
+    // required this.prices}
+  });
 
   Future<String> fetchUserName(String userId) async {
     try {
@@ -166,52 +163,52 @@ class _ClientHomePageState extends State<ClientHomePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Service: ${serviceProvider['service']}'),
-                    Text('Email: ${serviceProvider['email']}'),
-                    // imageUrls.isEmpty
-                    //     ? Column(
-                    //         children: [
-                    //           Text("No images available."),
-                    //           SizedBox(height: 10),
-                    //           // ElevatedButton(
-                    //           //   onPressed: () {
-                    //           //     Navigator.push(
-                    //           //       context,
-                    //           //       MaterialPageRoute(
-                    //           //         builder: (context) => UploadPage(),
-                    //           //       ),
-                    //           //     );
-                    //           //   },
-                    //           //   child: Text("Upload Image"),
-                    //           // ),
-                    //         ],
-                    //       )
-                    //     : Container(
-                    //         height: 300,
-                    //         padding: EdgeInsets.all(4.0),
-                    //         decoration: BoxDecoration(
-                    //           borderRadius: BorderRadius.circular(8.0),
-                    //           border: Border.all(
-                    //               color: Colors.blueAccent, width: 2),
-                    //         ),
-                    //         child: GridView.builder(
-                    //           gridDelegate:
-                    //               SliverGridDelegateWithFixedCrossAxisCount(
-                    //             crossAxisCount: 2,
-                    //             mainAxisSpacing: 4,
-                    //             crossAxisSpacing: 4,
-                    //           ),
-                    //           itemCount: imageUrls.length,
-                    //           itemBuilder: (context, index) {
-                    //             return ClipRRect(
-                    //               borderRadius: BorderRadius.circular(8.0),
-                    //               child: Image.network(
-                    //                 imageUrls[index],
-                    //                 fit: BoxFit.cover,
-                    //               ),
-                    //             );
-                    //           },
-                    //         ),
-                    //       ),
+                    // zText('Email: ${serviceProvider['email']}'),
+                    imageUrls.isEmpty
+                        ? Column(
+                            children: [
+                              Text("No images available."),
+                              SizedBox(height: 10),
+                              // ElevatedButton(
+                              //   onPressed: () {
+                              //     Navigator.push(
+                              //       context,
+                              //       MaterialPageRoute(
+                              //         builder: (context) => UploadPage(),
+                              //       ),
+                              //     );
+                              //   },
+                              //   child: Text("Upload Image"),
+                              // ),
+                            ],
+                          )
+                        : Container(
+                            height: 300,
+                            padding: EdgeInsets.all(4.0),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8.0),
+                              border: Border.all(
+                                  color: Colors.blueAccent, width: 2),
+                            ),
+                            child: GridView.builder(
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                mainAxisSpacing: 4,
+                                crossAxisSpacing: 4,
+                              ),
+                              itemCount: imageUrls.length,
+                              itemBuilder: (context, index) {
+                                return ClipRRect(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                  child: Image.network(
+                                    imageUrls[index],
+                                    fit: BoxFit.cover,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
 
                     Text('Address: ${serviceProvider['address']}'),
                   ],
@@ -376,6 +373,10 @@ class _ClientHomePageState extends State<ClientHomePage> {
       ),
       body: Column(
         children: [
+          Image.network(
+            'https://img.freepik.com/free-vector/search-concept-landing-page_52683-11001.jpg?t=st=1730398796~exp=1730402396~hmac=7e775ea41c31adf97c1027cde5c7c53953cd63088957b2de0a419f0457139d02&w=996', // Replace with your image URL
+            fit: BoxFit.cover, // Cover the entire screen
+          ),
           if (indexClicked == 0 || indexClicked == 1)
             Padding(
               padding: const EdgeInsets.all(8.0),
@@ -595,7 +596,6 @@ class _ClientHomePageState extends State<ClientHomePage> {
                                   );
                                 },
                               ),
-                              
                             ],
                           ),
                         ),

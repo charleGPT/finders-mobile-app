@@ -3,7 +3,7 @@ import 'package:finders_v1_1/Service_Provider/service_provider_reg.dart';
 import 'package:flutter/material.dart';
 
 class CIPCRegistrationPage extends StatefulWidget {
-  const CIPCRegistrationPage({Key? key}) : super(key: key);
+  const CIPCRegistrationPage({super.key});
 
   @override
   _CIPCRegistrationPageState createState() => _CIPCRegistrationPageState();

@@ -53,7 +53,7 @@ class _ServiceProviderDetailsPageState
           .where('companyName', isEqualTo: companyName)
           .snapshots()
           .map((querySnapshot) => querySnapshot.docs
-              .map((doc) => doc.data() as Map<String, dynamic>)
+              .map((doc) => doc.data())
               .toList());
     } catch (e) {
       debugPrint('Error fetching reviews: $e');

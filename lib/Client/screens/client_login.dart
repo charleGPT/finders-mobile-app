@@ -1,5 +1,3 @@
-// ignore_for_file: library_private_types_in_public_api, use_build_context_synchronously
-
 import 'package:finders_v1_1/Client/screens/client_home.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -48,7 +46,12 @@ class _ClientLoginPageState extends State<ClientLoginPage> {
               context,
               MaterialPageRoute(
                 builder: (context) => const ClientHomePage(
-                  companyName: '', providerId: '', serviceProviderId: '', address: '', services: [], clientId: '', 
+                  companyName: '',
+                  providerId: '',
+                  serviceProviderId: '',
+                  address: '',
+                  services: [],
+                  clientId: '',
                 ),
               ),
             );
@@ -66,6 +69,20 @@ class _ClientLoginPageState extends State<ClientLoginPage> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _sendPasswordResetEmail() async {
+    try {
+      await _auth.sendPasswordResetEmail(email: _emailController.text.trim());
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text("Password reset link sent! Check your email.")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: ${e.toString()}")),
+      );
     }
   }
 
@@ -176,6 +193,18 @@ class _ClientLoginPageState extends State<ClientLoginPage> {
                 ),
               ),
               const SizedBox(height: 20),
+
+              // Forgot Password button
+              TextButton(
+                onPressed: _sendPasswordResetEmail,
+                child: const Text(
+                  'Forgot Password?',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.blueAccent,
+                  ),
+                ),
+              ),
 
               // Register button
               TextButton(

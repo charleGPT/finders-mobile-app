@@ -45,6 +45,25 @@ class _ServiceProviderLoginPageState extends State<ServiceProviderLoginPage> {
     }
   }
 
+  Future<void> _resetPassword() async {
+    if (_emailController.text.isNotEmpty) {
+      try {
+        await _auth.sendPasswordResetEmail(email: _emailController.text.trim());
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Password reset email sent")),
+        );
+      } catch (e) {
+        setState(() {
+          _errorMessage = e.toString();
+        });
+      }
+    } else {
+      setState(() {
+        _errorMessage = "Please enter your email to reset password";
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -121,6 +140,15 @@ class _ServiceProviderLoginPageState extends State<ServiceProviderLoginPage> {
                         },
                       ),
                       const SizedBox(height: 20),
+
+                      // Forgot Password Button
+                      TextButton(
+                        onPressed: _resetPassword,
+                        child: const Text(
+                          'Forgot Password?',
+                          style: TextStyle(color: Colors.blueAccent),
+                        ),
+                      ),
 
                       // Error message display
                       if (_errorMessage != null)

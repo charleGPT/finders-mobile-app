@@ -8,7 +8,7 @@ class ReviewPage extends StatefulWidget {
   final String serviceProviderId;
   final String username;
 
-  ReviewPage({
+  const ReviewPage({
     super.key,
     required this.clientId,
     required this.serviceProviderId,

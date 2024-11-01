@@ -7,7 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class PartnerRegistrationPage extends StatefulWidget {
-  const PartnerRegistrationPage({Key? key}) : super(key: key);
+  const PartnerRegistrationPage({super.key});
 
   @override
   _PartnerRegistrationPageState createState() =>
